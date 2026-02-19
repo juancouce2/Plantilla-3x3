@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Guion Dirección de Sesión 3x3 (ABP)</title>
+
+  <!-- Fuentes opcionales (si hay internet). Si no, usa las del sistema -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --panel:#f9fafb;
+      --accent:#f59e0b; /* naranja balón */
+      --radius:12px;
+      --shadow:0 6px 18px rgba(0,0,0,.06);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:#f3f4f6;
+      color:var(--ink);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    /* Barra superior (no se imprime) */
+    .toolbar{
+      position:sticky; top:0;
+      background:white;
+      border-bottom:1px solid var(--line);
+      padding:10px 14px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
+      z-index:10;
+    }
+    .btn{
+      border:1px solid var(--line);
+      background:white;
+      padding:10px 12px;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .btn.primary{
+      border-color:transparent;
+      background:var(--ink);
+      color:white;
+    }
+    .btn.warn{
+      border-color:transparent;
+      background:var(--accent);
+      color:#111827;
+    }
+    .hint{
+      color:var(--muted);
+      font-size:12px;
+      margin-left:6px;
+    }
+
+    /* Hoja A4 */
+    .page{
+      width:210mm;
+      min-height:297mm;
+      margin:16px auto;
+      background:white;
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      padding:16mm;
+    }
+
+    h1{
+      margin:0 0 10px 0;
+      font-family: Montserrat, Inter, system-ui, sans-serif;
+      font-size:20px;
+      letter-spacing:.2px;
+    }
+    .sub{
+      margin:0 0 14px 0;
+      color:var(--muted);
+      font-size:12.5px;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .grid-3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:12px;
+    }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding:12px;
+    }
+    .card.white{
+      background:white;
+    }
+
+    .title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-family: Montserrat, Inter, system-ui, sans-serif;
+      font-weight:700;
+      font-size:13px;
+      margin:0 0 8px 0;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--accent);
+      display:inline-block;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .field{
+      flex:1 1 160px;
+      min-width:160px;
+    }
+    .label{
+      font-size:11px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    /* Campos rellenables */
+    .input{
+      background:white;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px;
+      min-height:38px;
+      outline:none;
+    }
+    .input[contenteditable="true"]:empty:before{
+      content: attr(data-placeholder);
+      color:#9ca3af;
+    }
+
+    .table{
+      display:grid;
+      grid-template-columns: 120px 1fr 1fr 90px;
+      gap:8px;
+      align-items:stretch;
+    }
+    .th{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:700;
+      padding:2px 2px 6px 2px;
+    }
+
+    .small{
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .scale{
+      display:grid;
+      grid-template-columns: 1fr 70px 70px 70px;
+      gap:8px;
+      align-items:center;
+    }
+    .chip{
+      text-align:center;
+      border:1px solid var(--line);
+      background:white;
+      padding:8px 0;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+      user-select:none;
+    }
+    .chip.active{
+      background:#111827;
+      color:white;
+      border-color:#111827;
+    }
+
+    /* Impresión */
+    @page{
+      size:A4;
+      margin:12mm;
+    }
+    @media print{
+      body{background:white}
+      .toolbar{display:none !important}
+      .page{
+        margin:0;
+        border:none;
+        border-radius:0;
+        box-shadow:none;
+        padding:0;
+        width:auto;
+        min-height:auto;
+      }
+      .card{break-inside: avoid;}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="toolbar">
+    <button class="btn primary" onclick="saveLocal()">Guardar</button>
+    <button class="btn" onclick="loadLocal()">Cargar</button>
+    <button class="btn" onclick="clearAll()">Borrar</button>
+    <button class="btn warn" onclick="window.print()">Imprimir / Guardar PDF</button>
+    <span class="hint">Tip: rellena, guarda, y Ctrl+P → “Guardar como PDF”.</span>
+  </div>
+
+  <main class="page" id="sheet">
+    <h1>Guion de Dirección de Sesión – Baloncesto 3x3 (ABP)</h1>
+    <p class="sub">Rellena esta ficha para planificar, dirigir y evaluar tu sesión. (1 página A4)</p>
+
+    <!-- Datos sesión -->
+    <section class="card white">
+      <div class="title"><span class="dot"></span>Datos de sesión</div>
+      <div class="grid-3">
+        <div class="field">
+          <div class="label">Equipo</div>
+          <div class="input" contenteditable="true" data-key="equipo" data-placeholder="Ej.: Equipo A"></div>
+        </div>
+        <div class="field">
+          <div class="label">Sesión nº</div>
+          <div class="input" contenteditable="true" data-key="sesion" data-placeholder="Ej.: 3"></div>
+        </div>
+        <div class="field">
+          <div class="label">Tema</div>
+          <div class="input" contenteditable="true" data-key="tema" data-placeholder="Ej.: Tiro y entrada"></div>
+        </div>
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div class="grid-2">
+        <div class="field">
+          <div class="label">Objetivo (1 frase)</div>
+          <div class="input" contenteditable="true" data-key="objetivo" data-placeholder="Ej.: Mejorar la entrada a canasta en situaciones reales 2x2."></div>
+        </div>
+        <div class="field">
+          <div class="label">Espacio / Tiempo</div>
+          <div class="input" contenteditable="true" data-key="espacio" data-placeholder="Ej.: Pistas exteriores / 55'"></div>
+        </div>
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div class="grid-2">
+        <div class="field">
+          <div class="label">Material</div>
+          <div class="input" contenteditable="true" data-key="material" data-placeholder="Balones, conos, petos…"></div>
+        </div>
+        <div class="field">
+          <div class="label">Seguridad (2 normas)</div>
+          <div class="input" contenteditable="true" data-key="seguridad" data-placeholder="1) …  2) …"></div>
+        </div>
+      </div>
+    </section>
+
+    <div style="height:12px"></div>
+
+    <!-- Presentación + calentamiento -->
+    <section class="grid-2">
+      <div class="card">
+        <div class="title"><span class="dot"></span>1) Presentación del equipo (1 min)</div>
+        <div class="input" contenteditable="true" data-key="presentacion" data-placeholder="Identidad + qué vamos a trabajar hoy (10 segundos)."></div>
+      </div>
+
+      <div class="card">
+        <div class="title"><span class="dot"></span>2) Calentamiento específico (8–10 min)</div>
+        <div class="input" contenteditable="true" data-key="calent" data-placeholder="Activación + técnico con balón + mini-juego. Consignas clave (máx. 2)."></div>
+      </div>
+    </section>
+
+    <div style="height:12px"></div>
+
+    <!-- Progresión de tareas -->
+    <section class="card white">
+      <div class="title"><span class="dot"></span>3) Progresión de tareas (3 tareas)</div>
+      <div class="table">
+        <div class="th">Tarea</div>
+        <div class="th">Organización</div>
+        <div class="th">Descripción + variantes + corrección clave</div>
+        <div class="th">Tiempo</div>
+
+        <div class="input" contenteditable="true" data-key="t1n" data-placeholder="Tarea 1 (básica)"></div>
+        <div class="input" contenteditable="true" data-key="t1o" data-placeholder="Parejas / tríos / estaciones…"></div>
+        <div class="input" contenteditable="true" data-key="t1d" data-placeholder="Qué hacen + 1 variante fácil/difícil + 1 corrección clave"></div>
+        <div class="input" contenteditable="true" data-key="t1t" data-placeholder="min"></div>
+
+        <div class="input" contenteditable="true" data-key="t2n" data-placeholder="Tarea 2 (intermedia)"></div>
+        <div class="input" contenteditable="true" data-key="t2o" data-placeholder="…"></div>
+        <div class="input" contenteditable="true" data-key="t2d" data-placeholder="…"></div>
+        <div class="input" contenteditable="true" data-key="t2t" data-placeholder="min"></div>
+
+        <div class="input" contenteditable="true" data-key="t3n" data-placeholder="Tarea 3 (aplicación)"></div>
+        <div class="input" contenteditable="true" data-key="t3o" data-placeholder="…"></div>
+        <div class="input" contenteditable="true" data-key="t3d" data-placeholder="Incluye 1 regla para asegurar participación"></div>
+        <div class="input" contenteditable="true" data-key="t3t" data-placeholder="min"></div>
+      </div>
+      <p class="small" style="margin:10px 0 0 0;">Tip: de lo simple a lo real. Explicar → demo → práctica → corrección.</p>
+    </section>
+
+    <div style="height:12px"></div>
+
+    <section class="grid-2">
+      <div class="card">
+        <div class="title"><span class="dot"></span>4) Mini-juego final (10–12 min)</div>
+        <div class="input" contenteditable="true" data-key="minijuego" data-placeholder="Formato (1x1/2x2/3x3), reglas adaptadas (2–3), criterio de éxito."></div>
+      </div>
+
+      <div class="card">
+        <div class="title"><span class="dot"></span>5) Vuelta a la calma (4–6 min)</div>
+        <div class="input" contenteditable="true" data-key="vuelta" data-placeholder="Respiración/estiramientos + cierre de 1 idea."></div>
+      </div>
+    </section>
+
+    <div style="height:12px"></div>
+
+    <section class="grid-2">
+      <div class="card white">
+        <div class="title"><span class="dot"></span>6) “1 minuto de valor” (1–2 min)</div>
+        <div class="input" contenteditable="true" data-key="minuto" data-placeholder="Dato investigado (tema asignado) + fuente breve."></div>
+      </div>
+
+      <div class="card white">
+        <div class="title"><span class="dot"></span>7) Evaluación rápida (0–2)</div>
+
+        <div class="scale" data-scale="eval1">
+          <div class="label" style="margin:0">Organización</div>
+          <div class="chip" data-val="0">0</div>
+          <div class="chip" data-val="1">1</div>
+          <div class="chip" data-val="2">2</div>
+        </div>
+
+        <div style="height:8px"></div>
+
+        <div class="scale" data-scale="eval2">
+          <div class="label" style="margin:0">Claridad</div>
+          <div class="chip" data-val="0">0</div>
+          <div class="chip" data-val="1">1</div>
+          <div class="chip" data-val="2">2</div>
+        </div>
+
+        <div style="height:8px"></div>
+
+        <div class="scale" data-scale="eval3">
+          <div class="label" style="margin:0">Inclusión</div>
+          <div class="chip" data-val="0">0</div>
+          <div class="chip" data-val="1">1</div>
+          <div class="chip" data-val="2">2</div>
+        </div>
+
+        <div style="height:8px"></div>
+
+        <div class="scale" data-scale="eval4">
+          <div class="label" style="margin:0">Gestión del tiempo</div>
+          <div class="chip" data-val="0">0</div>
+          <div class="chip" data-val="1">1</div>
+          <div class="chip" data-val="2">2</div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="grid-2">
+          <div class="field">
+            <div class="label">¿Qué salió bien?</div>
+            <div class="input" contenteditable="true" data-key="bien" data-placeholder="1 idea"></div>
+          </div>
+          <div class="field">
+            <div class="label">¿Qué mejoraríamos?</div>
+            <div class="input" contenteditable="true" data-key="mejorar" data-placeholder="1 idea"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<script>
+  // Guardar / cargar en localStorage
+  const KEY = "plantilla_3x3_abp_v1";
+
+  function getAllFields(){
+    return Array.from(document.querySelectorAll('[contenteditable="true"][data-key]'));
+  }
+
+  function saveLocal(){
+    const data = {};
+    getAllFields().forEach(el => data[el.dataset.key] = el.innerText.trim());
+
+    // escalas
+    document.querySelectorAll('.scale').forEach(scale => {
+      const active = scale.querySelector('.chip.active');
+      data[scale.dataset.scale] = active ? active.dataset.val : "";
+    });
+
+    localStorage.setItem(KEY, JSON.stringify(data));
+    alert("Guardado ✅");
+  }
+
+  function loadLocal(){
+    const raw = localStorage.getItem(KEY);
+    if(!raw){ alert("No hay nada guardado todavía."); return; }
+    const data = JSON.parse(raw);
+
+    getAllFields().forEach(el => {
+      el.innerText = data[el.dataset.key] || "";
+    });
+
+    document.querySelectorAll('.scale').forEach(scale => {
+      const val = data[scale.dataset.scale];
+      scale.querySelectorAll('.chip').forEach(ch => ch.classList.toggle('active', ch.dataset.val === val));
+    });
+
+    alert("Cargado ✅");
+  }
+
+  function clearAll(){
+    if(!confirm("¿Borrar todo?")) return;
+    getAllFields().forEach(el => el.innerText = "");
+    document.querySelectorAll('.chip').forEach(ch => ch.classList.remove('active'));
+    localStorage.removeItem(KEY);
+  }
+
+  // Chips (0-2) seleccionables
+  document.querySelectorAll('.scale').forEach(scale => {
+    scale.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        scale.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+  });
+</script>
+</body>
+</html>
